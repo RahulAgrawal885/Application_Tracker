@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Tracker & Outreach</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg0:#0a0e1a;--bg1:#111827;--bg2:#1f2937;--bg3:#374151;
+      --blue:#3b82f6;--green:#10b981;--yellow:#f59e0b;--red:#ef4444;--purple:#8b5cf6;--teal:#14b8a6;
+      --txt1:#f9fafb;--txt2:#9ca3af;--bdr:#374151;
+    }
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg0);color:var(--txt1);min-height:100vh}
+    /* ── HEADER ── */
+    .header{background:var(--bg1);border-bottom:1px solid var(--bdr);padding:1rem 1.5rem;position:sticky;top:0;z-index:200}
+    .header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem}
+    .logo{font-size:1.25rem;font-weight:700;background:linear-gradient(135deg,var(--blue),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .tabs{display:flex;gap:.25rem}
+    .tab{padding:.5rem 1.25rem;border:1px solid var(--bdr);background:transparent;color:var(--txt2);border-radius:6px;cursor:pointer;font-weight:600;font-size:.875rem;transition:all .2s}
+    .tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+    .tab:not(.active):hover{background:var(--bg2);color:var(--txt1)}
+    .stats-row{display:flex;gap:.75rem;flex-wrap:wrap}
+    .stat{background:var(--bg2);border:1px solid var(--bdr);border-radius:8px;padding:.6rem 1rem;min-width:110px;flex:1;transition:transform .2s}
+    .stat:hover{transform:translateY(-1px)}
+    .stat-val{font-size:1.5rem;font-weight:700;color:var(--blue)}
+    .stat-val.green{color:var(--green)}
+    .stat-val.red{color:var(--red)}
+    .stat-val.yellow{color:var(--yellow)}
+    .stat-val.purple{color:var(--purple)}
+    .stat-lbl{font-size:.7rem;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-top:.1rem}
+    /* ── TABS CONTENT ── */
+    .tab-content{display:none;padding:1.25rem 1.5rem}
+    .tab-content.active{display:block}
+    /* ── CONTROLS ── */
+    .controls{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+    .search-wrap{flex:1;min-width:220px;position:relative}
+    .search-wrap input{width:100%;padding:.5rem .75rem .5rem 2.2rem;background:var(--bg2);border:1px solid var(--bdr);border-radius:6px;color:var(--txt1);font-size:.875rem}
+    .search-wrap::before{content:"🔍";position:absolute;left:.6rem;top:50%;transform:translateY(-50%);opacity:.5;font-size:.9rem}
+    select,input[type=date]{padding:.5rem .75rem;background:var(--bg2);border:1px solid var(--bdr);border-radius:6px;color:var(--txt1);font-size:.875rem;cursor:pointer}
+    select:focus,input:focus{outline:none;border-color:var(--blue)}
+    .btn{padding:.5rem 1rem;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:.875rem;display:inline-flex;align-items:center;gap:.4rem;transition:all .2s}
+    .btn-primary{background:var(--blue);color:#fff}
+    .btn-primary:hover{background:#2563eb;transform:translateY(-1px)}
+    .btn-secondary{background:var(--bg2);color:var(--txt1);border:1px solid var(--bdr)}
+    .btn-secondary:hover{background:var(--bg3)}
+    .btn-sm{padding:.25rem .6rem;font-size:.75rem}
+    .btn-danger{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+    .btn-danger:hover{background:rgba(239,68,68,.3)}
+    /* ── CHARTS ── */
+    .chart-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1rem;margin-bottom:1.25rem}
+    .chart-card{background:var(--bg1);border:1px solid var(--bdr);border-radius:10px;padding:1.25rem}
+    .chart-card h3{font-size:.875rem;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:1rem}
+    .chart-card canvas{max-height:220px}
+    /* ── TABLE ── */
+    .table-wrap{background:var(--bg1);border:1px solid var(--bdr);border-radius:10px;overflow:hidden}
+    .table-header{padding:.75rem 1rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bdr)}
+    .table-title{font-size:.875rem;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.04em}
+    .pagination{display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:var(--txt2)}
+    .pg-btn{padding:.25rem .6rem;background:var(--bg2);border:1px solid var(--bdr);border-radius:4px;color:var(--txt1);cursor:pointer;font-size:.75rem}
+    .pg-btn:hover{background:var(--bg3)}
+    table{width:100%;border-collapse:collapse;font-size:.8rem}
+    th{background:var(--bg2);padding:.65rem .9rem;text-align:left;font-weight:600;color:var(--txt2);border-bottom:2px solid var(--bdr);cursor:pointer;user-select:none;white-space:nowrap;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em}
+    th:hover{color:var(--txt1)}
+    td{padding:.65rem .9rem;border-bottom:1px solid rgba(55,65,81,.5);vertical-align:middle}
+    tr:hover{background:rgba(59,130,246,.04)}
+    tr:last-child td{border-bottom:none}
+    .badge{display:inline-flex;align-items:center;padding:.2rem .6rem;border-radius:99px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;cursor:pointer;transition:all .15s;border:none}
+    .badge:hover{filter:brightness(1.3);transform:scale(1.04)}
+    .s-Applied{background:rgba(59,130,246,.18);color:#60a5fa}
+    .s-OA{background:rgba(139,92,246,.18);color:#a78bfa}
+    .s-Phone{background:rgba(245,158,11,.18);color:#fbbf24}
+    .s-Superday{background:rgba(236,72,153,.18);color:#f472b6}
+    .s-Offer{background:rgba(16,185,129,.18);color:#34d399}
+    .s-Accepted{background:rgba(5,150,105,.3);color:#6ee7b7}
+    .s-Rejected{background:rgba(239,68,68,.18);color:#f87171}
+    .s-Withdrawn{background:rgba(107,114,128,.18);color:#9ca3af}
+    .esg{display:inline-flex;padding:.1rem .4rem;background:rgba(5,150,105,.2);color:#34d399;border-radius:4px;font-size:.6rem;font-weight:700;text-transform:uppercase;margin-left:.4rem}
+    /* outreach badges */
+    .r-Waiting{background:rgba(245,158,11,.18);color:#fbbf24}
+    .r-Replied{background:rgba(16,185,129,.18);color:#34d399}
+    .r-Positive{background:rgba(16,185,129,.25);color:#6ee7b7}
+    .r-Negative{background:rgba(239,68,68,.18);color:#f87171}
+    .r-NoReply{background:rgba(107,114,128,.18);color:#9ca3af}
+    .p-LinkedIn{background:rgba(59,130,246,.18);color:#60a5fa}
+    .p-Email{background:rgba(139,92,246,.18);color:#a78bfa}
+    .p-Other{background:rgba(107,114,128,.18);color:#9ca3af}
+    .overdue{color:var(--red);font-weight:700;animation:pulse 2s infinite}
+    .followup-soon{color:var(--yellow);font-weight:600}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+    .link-btn{color:var(--blue);text-decoration:none;font-size:.75rem}
+    .link-btn:hover{text-decoration:underline}
+    /* ── MODAL ── */
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;align-items:center;justify-content:center;padding:1rem}
+    .overlay.open{display:flex}
+    .modal{background:var(--bg1);border:1px solid var(--bdr);border-radius:12px;width:100%;max-width:580px;max-height:92vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,.6)}
+    .modal-hdr{padding:1.25rem 1.5rem;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center}
+    .modal-hdr h2{font-size:1.1rem;font-weight:700}
+    .close-btn{background:none;border:none;color:var(--txt2);font-size:1.5rem;cursor:pointer;line-height:1;padding:.25rem}
+    .close-btn:hover{color:var(--txt1)}
+    .modal-body{padding:1.25rem 1.5rem}
+    .modal-ftr{padding:1rem 1.5rem;border-top:1px solid var(--bdr);display:flex;justify-content:flex-end;gap:.5rem}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    .form-group{margin-bottom:.9rem}
+    .form-group label{display:block;margin-bottom:.35rem;font-size:.8rem;font-weight:500;color:var(--txt2)}
+    .form-group input,.form-group select,.form-group textarea{width:100%;padding:.65rem .75rem;background:var(--bg2);border:1px solid var(--bdr);border-radius:6px;color:var(--txt1);font-size:.875rem}
+    .form-group textarea{resize:vertical;min-height:70px}
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--blue)}
+    .check-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.9rem}
+    .check-row input[type=checkbox]{width:auto;accent-color:var(--green)}
+    .check-row label{font-size:.875rem;color:var(--txt2)}
+    /* ── TOAST ── */
+    .toast-wrap{position:fixed;bottom:1.5rem;right:1.5rem;z-index:2000;display:flex;flex-direction:column;gap:.4rem}
+    .toast{background:var(--bg1);border:1px solid var(--bdr);padding:.75rem 1.25rem;border-radius:8px;display:flex;align-items:center;gap:.6rem;animation:slideIn .25s ease;min-width:260px;font-size:.875rem}
+    .toast.ok{border-left:4px solid var(--green)}
+    .toast.err{border-left:4px solid var(--red)}
+    .toast.info{border-left:4px solid var(--blue)}
+    @keyframes slideIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+    /* ── OUTREACH ALERTS ── */
+    .alert-box{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;font-size:.8rem}
+    .alert-box h4{color:var(--yellow);font-size:.8rem;margin-bottom:.35rem}
+    .alert-item{display:flex;align-items:center;gap:.5rem;padding:.2rem 0;color:var(--txt2)}
+    .alert-item strong{color:var(--txt1)}
+    /* ── TEMPLATES ── */
+    .tmpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1rem}
+    .tmpl-card{background:var(--bg1);border:1px solid var(--bdr);border-radius:10px;padding:1.25rem;display:flex;flex-direction:column;gap:.75rem;transition:border-color .2s}
+    .tmpl-card:hover{border-color:var(--blue)}
+    .tmpl-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem}
+    .tmpl-name{font-weight:700;font-size:.95rem;color:var(--txt1)}
+    .tmpl-body{font-size:.8rem;color:var(--txt2);line-height:1.6;white-space:pre-wrap;background:var(--bg2);border-radius:6px;padding:.75rem;max-height:160px;overflow-y:auto;flex:1}
+    .tmpl-footer{display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap}
+    .tmpl-meta{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+    .cat-pill{padding:.2rem .6rem;border-radius:99px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+    .cat-Connect{background:rgba(59,130,246,.2);color:#60a5fa}
+    .cat-Followup{background:rgba(245,158,11,.2);color:#fbbf24}
+    .cat-ColdEmail{background:rgba(139,92,246,.2);color:#a78bfa}
+    .cat-Referral{background:rgba(16,185,129,.2);color:#34d399}
+    .cat-ThankYou{background:rgba(20,184,166,.2);color:#2dd4bf}
+    .char-count{font-size:.7rem;color:var(--txt2);font-variant-numeric:tabular-nums}
+    .char-count.over{color:var(--red);font-weight:700}
+    .rate-btn{padding:.2rem .6rem;border-radius:99px;font-size:.68rem;font-weight:700;border:1px solid transparent;cursor:pointer;transition:all .15s;background:transparent}
+    .rate-btn.working{background:rgba(16,185,129,.15);color:#34d399;border-color:rgba(16,185,129,.4)}
+    .rate-btn.low{background:rgba(239,68,68,.15);color:#f87171;border-color:rgba(239,68,68,.4)}
+    .rate-btn.unrated{color:var(--txt2);border-color:var(--bdr)}
+    .rate-btn:hover{filter:brightness(1.3)}
+    .char-bar{height:3px;border-radius:2px;background:var(--bg3);margin-top:.35rem;overflow:hidden}
+    .char-bar-fill{height:100%;border-radius:2px;transition:width .2s,background .2s}
+    .tmpl-filter-bar{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem;align-items:center}
+    .cat-filter-btn{padding:.35rem .85rem;border-radius:99px;font-size:.75rem;font-weight:600;border:1px solid var(--bdr);background:transparent;color:var(--txt2);cursor:pointer;transition:all .15s}
+    .cat-filter-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+    .cat-filter-btn:hover:not(.active){background:var(--bg2);color:var(--txt1)}
+    .empty-tmpl{text-align:center;padding:3rem 1rem;color:var(--txt2);font-size:.875rem}
+    /* ── SECTION DIVIDER ── */
+    .section-title{font-size:.75rem;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+    .section-title::after{content:'';flex:1;height:1px;background:var(--bdr)}
+    @media(max-width:700px){
+      .header,.tab-content{padding:.75rem}
+      .stats-row{gap:.5rem}
+      .stat{min-width:80px}
+      .form-row{grid-template-columns:1fr}
+      .chart-row{grid-template-columns:1fr}
+    }
+    ::-webkit-scrollbar{width:6px;height:6px}
+    ::-webkit-scrollbar-track{background:var(--bg0)}
+    ::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
+
+    /* ── SETUP & LOADING OVERLAYS ── */
+    .full-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:3000;display:none;align-items:center;justify-content:center;padding:1.5rem}
+    .setup-box{background:var(--bg1);border:1px solid var(--bdr);border-radius:14px;width:100%;max-width:580px;padding:2rem;box-shadow:0 30px 60px rgba(0,0,0,.5)}
+    .setup-box h2{font-size:1.3rem;font-weight:700;margin-bottom:.4rem;background:linear-gradient(135deg,var(--blue),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .setup-box p{font-size:.875rem;color:var(--txt2);margin-bottom:1.25rem}
+    .setup-steps{background:var(--bg2);border-radius:8px;padding:1rem 1.25rem;margin-bottom:1.25rem;font-size:.82rem;color:var(--txt2);line-height:1.9}
+    .setup-steps strong{color:var(--txt1)}
+    .setup-steps code{background:var(--bg3);padding:.1rem .4rem;border-radius:3px;font-family:monospace;color:var(--teal);font-size:.8rem}
+    .setup-url-row{display:flex;gap:.5rem;margin-bottom:.75rem}
+    .setup-url-row input{flex:1;padding:.65rem .85rem;background:var(--bg2);border:1px solid var(--bdr);border-radius:6px;color:var(--txt1);font-size:.875rem}
+    .setup-url-row input:focus{outline:none;border-color:var(--blue)}
+    #connectMsg{font-size:.8rem;min-height:1.2rem;margin-bottom:.5rem}
+    .setup-offline{font-size:.75rem;color:var(--txt2);text-align:center;margin-top:.75rem;cursor:pointer;text-decoration:underline}
+    .setup-offline:hover{color:var(--txt1)}
+    .loading-box{display:flex;flex-direction:column;align-items:center;gap:1rem;color:var(--txt2)}
+    .spinner{width:40px;height:40px;border:3px solid var(--bdr);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    /* ── SAVE STATUS ── */
+    .save-status{font-size:.72rem;font-weight:600;padding:.2rem .6rem;border-radius:4px;transition:all .3s}
+    .save-status.saving{color:var(--yellow)}
+    .save-status.saved{color:var(--green)}
+    .save-status.error{color:var(--red)}
+    .save-status.offline{color:var(--txt2);background:var(--bg2);border:1px solid var(--bdr)}
+    /* ── SETTINGS BUTTON ── */
+    .settings-btn{background:none;border:1px solid var(--bdr);color:var(--txt2);border-radius:6px;padding:.35rem .6rem;cursor:pointer;font-size:.85rem;transition:all .2s}
+    .settings-btn:hover{background:var(--bg2);color:var(--txt1)}
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div class="logo">📊 Job Tracker & Outreach</div>
+    <div style="display:flex;gap:.5rem;align-items:center">
+      <span id="saveStatus" class="save-status"></span>
+      <button class="btn btn-secondary btn-sm" onclick="exportCSV()">⬇ Export</button>
+      <button class="settings-btn" onclick="showSetup()" title="Google Sheets settings">⚙</button>
+      <button class="btn btn-primary btn-sm" id="addBtn" onclick="openAddModal()">＋ Add</button>
+    </div>
+  </div>
+  <div class="stats-row" id="statsRow"></div>
+  <div style="margin-top:.75rem;display:flex;gap:.25rem">
+    <button class="tab active" id="tab-apps" onclick="switchTab('apps')">💼 Applications</button>
+    <button class="tab" id="tab-outreach" onclick="switchTab('outreach')">📨 Outreach</button>
+    <button class="tab" id="tab-templates" onclick="switchTab('templates')">✉️ Templates</button>
+  </div>
+</div>
+
+<!-- APPLICATIONS TAB -->
+<div class="tab-content active" id="content-apps">
+  <div class="chart-row">
+    <div class="chart-card"><h3>Status Breakdown</h3><canvas id="chartStatus"></canvas></div>
+    <div class="chart-card"><h3>Applications Over Time</h3><canvas id="chartTimeline"></canvas></div>
+  </div>
+  <div class="controls">
+    <div class="search-wrap"><input type="text" id="appSearch" placeholder="Search company, position..." oninput="renderAppsTable()"></div>
+    <select id="appStatusFilter" onchange="renderAppsTable()">
+      <option value="">All Statuses</option>
+      <option>Applied</option><option>OA/HireVue</option><option>Phone Screen</option>
+      <option>Superday/Final</option><option>Offer</option><option>Accepted</option>
+      <option>Rejected</option><option>Withdrawn</option>
+    </select>
+    <select id="appLocFilter" onchange="renderAppsTable()"><option value="">All Locations</option></select>
+    <select id="appSortBy" onchange="renderAppsTable()">
+      <option value="dateApplied-desc">Newest First</option>
+      <option value="dateApplied-asc">Oldest First</option>
+      <option value="company-asc">Company A-Z</option>
+      <option value="status-asc">Status</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <div class="table-header">
+      <span class="table-title" id="appTableTitle">Applications</span>
+      <div class="pagination" id="appPagination"></div>
+    </div>
+    <div style="overflow-x:auto"><table><thead><tr>
+      <th>Company</th><th>Position</th><th>Location</th><th>Applied</th><th>Status</th><th>Outreach</th><th>Actions</th>
+    </tr></thead><tbody id="appsBody"></tbody></table></div>
+  </div>
+</div>
+
+<!-- OUTREACH TAB -->
+<div class="tab-content" id="content-outreach">
+  <div id="followupAlerts"></div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:.5rem">
+    <button class="btn btn-danger btn-sm" onclick="resetOutreach()" title="Wipe all outreach contacts and start fresh">🗑 Clear All Outreach</button>
+  </div>
+  <div class="controls">
+    <div class="search-wrap"><input type="text" id="outSearch" placeholder="Search company, contact name..." oninput="renderOutreachTable()"></div>
+    <select id="outTypeFilter" onchange="renderOutreachTable()">
+      <option value="">All Types</option>
+      <option value="role">Role-specific</option>
+      <option value="networking">Networking (no role)</option>
+    </select>
+    <select id="outCompanyFilter" onchange="renderOutreachTable()"><option value="">All Companies</option></select>
+    <select id="outReplyFilter" onchange="renderOutreachTable()">
+      <option value="">All Reply Status</option>
+      <option>Waiting</option><option>Replied – Positive</option>
+      <option>Replied – No</option><option>No Reply (gave up)</option>
+    </select>
+    <select id="outPlatformFilter" onchange="renderOutreachTable()">
+      <option value="">All Platforms</option><option>LinkedIn</option><option>Email</option><option>Other</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <div class="table-header">
+      <span class="table-title" id="outTableTitle">Outreach Contacts</span>
+      <div class="pagination" id="outPagination"></div>
+    </div>
+    <div style="overflow-x:auto"><table><thead><tr>
+      <th>Company</th><th>Contact Name</th><th>Their Role</th><th>Platform</th>
+      <th>Sent</th><th>Reply</th><th>Follow-up</th><th>Notes</th><th>Actions</th>
+    </tr></thead><tbody id="outBody"></tbody></table></div>
+  </div>
+</div>
+
+<!-- TEMPLATES TAB -->
+<div class="tab-content" id="content-templates">
+  <div class="tmpl-filter-bar">
+    <button class="cat-filter-btn active" data-cat="" onclick="setTmplFilter(this,'')">All</button>
+    <button class="cat-filter-btn" data-cat="Connect" onclick="setTmplFilter(this,'Connect')">🔗 LinkedIn Connect</button>
+    <button class="cat-filter-btn" data-cat="Followup" onclick="setTmplFilter(this,'Followup')">🔄 Follow-up</button>
+    <button class="cat-filter-btn" data-cat="ColdEmail" onclick="setTmplFilter(this,'ColdEmail')">📧 Cold Email</button>
+    <button class="cat-filter-btn" data-cat="Referral" onclick="setTmplFilter(this,'Referral')">🤝 Referral Ask</button>
+    <button class="cat-filter-btn" data-cat="ThankYou" onclick="setTmplFilter(this,'ThankYou')">🙏 Thank You</button>
+  </div>
+  <div class="tmpl-grid" id="tmplGrid"></div>
+</div>
+
+<!-- TEMPLATE MODAL -->
+<div class="overlay" id="tmplModal">
+  <div class="modal">
+    <div class="modal-hdr"><h2 id="tmplModalTitle">Add Template</h2><button class="close-btn" onclick="closeModal('tmplModal')">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="tmplId">
+      <div class="form-row">
+        <div class="form-group"><label>Template Name *</label><input id="tfName" placeholder="e.g. Short LinkedIn Connect"></div>
+        <div class="form-group"><label>Category *</label>
+          <select id="tfCat" onchange="updateModalCharCount()">
+            <option value="Connect">LinkedIn Connect</option>
+            <option value="Followup">Follow-up</option>
+            <option value="ColdEmail">Cold Email</option>
+            <option value="Referral">Referral Ask</option>
+            <option value="ThankYou">Thank You</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Message <span id="tfCharCount" style="float:right;font-size:.75rem;color:var(--txt2)">0 chars</span></label>
+        <textarea id="tfBody" rows="8" placeholder="Write your template here..." oninput="updateModalCharCount()"></textarea>
+        <div class="char-bar"><div id="tfCharBar" class="char-bar-fill" style="width:0;background:var(--green)"></div></div>
+      </div>
+      <div class="form-group"><label>Reply Rate</label>
+        <select id="tfRate">
+          <option value="unrated">Not rated yet</option>
+          <option value="working">✅ Working well</option>
+          <option value="low">⚠️ Low replies</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-secondary" onclick="closeModal('tmplModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitTemplate()">Save Template</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP MODAL -->
+<div class="overlay" id="appModal">
+  <div class="modal">
+    <div class="modal-hdr"><h2 id="appModalTitle">Add Application</h2><button class="close-btn" onclick="closeModal('appModal')">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="appId">
+      <div class="form-row">
+        <div class="form-group"><label>Company *</label><input id="fCompany" placeholder="e.g. Goldman Sachs"></div>
+        <div class="form-group"><label>Location *</label><input id="fLocation" placeholder="e.g. Paris, France"></div>
+      </div>
+      <div class="form-group"><label>Position *</label><input id="fPosition" placeholder="e.g. Finance Intern"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Date Applied *</label><input type="date" id="fDate"></div>
+        <div class="form-group"><label>Deadline</label><input type="date" id="fDeadline"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Status</label>
+          <select id="fStatus">
+            <option>Applied</option><option>OA/HireVue</option><option>Phone Screen</option>
+            <option>Superday/Final</option><option>Offer</option><option>Accepted</option>
+            <option>Rejected</option><option>Withdrawn</option>
+          </select>
+        </div>
+        <div class="form-group"><label>JD URL</label><input type="url" id="fUrl" placeholder="https://..."></div>
+      </div>
+      <div class="check-row"><input type="checkbox" id="fEsg"><label for="fEsg">ESG / Sustainability Focus</label></div>
+      <div class="form-group"><label>Notes</label><textarea id="fNotes" placeholder="Referral contact, recruiter name, tips..."></textarea></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-secondary" onclick="closeModal('appModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitApp()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- OUTREACH MODAL -->
+<div class="overlay" id="outModal">
+  <div class="modal">
+    <div class="modal-hdr"><h2 id="outModalTitle">Add Outreach Contact</h2><button class="close-btn" onclick="closeModal('outModal')">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="outId">
+      <div class="form-row">
+        <div class="form-group"><label>Company <span style="color:var(--txt2);font-weight:400">(optional)</span></label><input id="ofCompany" list="companySuggestions" placeholder="Leave blank for general networking"></div>
+        <div class="form-group"><label>Contact Name *</label><input id="ofName" placeholder="e.g. Sarah Chen"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Their Role / Title</label><input id="ofRole" placeholder="e.g. VP Finance, HR Recruiter"></div>
+        <div class="form-group"><label>Platform</label>
+          <select id="ofPlatform"><option>LinkedIn</option><option>Email</option><option>Other</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Date Contacted *</label><input type="date" id="ofDate"></div>
+        <div class="form-group"><label>Follow-up Date</label><input type="date" id="ofFollowup"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Reply Status</label>
+          <select id="ofReply">
+            <option>Waiting</option>
+            <option>Replied – Positive</option>
+            <option>Replied – No</option>
+            <option>No Reply (gave up)</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Profile / Email URL</label><input id="ofLink" placeholder="LinkedIn URL or email address"></div>
+      </div>
+      <div class="form-group"><label>Notes</label><textarea id="ofNotes" placeholder="What you said, what they replied, next steps..."></textarea></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-secondary" onclick="closeModal('outModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitOutreach()">Save</button>
+    </div>
+  </div>
+</div>
+
+<datalist id="companySuggestions"></datalist>
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+const SEED = [
+  {id:'app1',company:'Patrizia',position:'Financial Planning & Analysis (Team Revenue)',location:'LU',dateApplied:'2026-06-08',status:'Applied',isEsg:false,jdUrl:'https://patrizia.wd502.myworkdayjobs.com/en-US/PATRIZIA/job/Luxembourg-Luxembourg/Working-Student---Trainee-Financial-Planning---Analysis--Team-Revenue---m-f-d-_R2361-1?source=LinkedIn',notes:'R2361'},
+  {id:'app2',company:'Trinasolar',position:'Structured Finance & M&A Intern',location:'EU (Remote)',dateApplied:'2026-06-08',status:'Applied',isEsg:false,jdUrl:'https://www.linkedin.com/jobs/view/4418751713/?alternateChannel=search&eBP=CwEAAAGepqqnue545R7AF23npeMdbnVCBHDIJR6u1WYm6YfPxvvNJLLxI3hSHArqZ25WxEJ_sJzBNblgEhh4lugFtM4xwwqqBoZEdMIZS9YgfvHsrcvO0YuLhQk8ztlfuM8lVXjxdsEuO2nmLj6iQFYxF8MwiaL621-r5UNndW5H9r0MiRzaM-XIve5HF3afaj0KM4oHnUCdXnm0U_G4zZmfzOe_f9YlQCARnIg7xK_V4wf4cD6eCI-EqHFXLQIQKYynQtEQZogK8oHRYojRfIDYMw84iXKSJdJCuCul90mYRAaNDray7j8NmZqE8BJ1k4r7-6MFp05cAngPxNgV9CV6fcAaVNGTuVWmerAi7xHZEfaD8sOrzuLk_hh4jMfbl3ebl4WRMtHKPxLqleW2Mq5aMPZZp4C14S4NHITx7Qq9T9I2wWNaFrbWpzOORTdEMqwtL0mt3neZ7RkbQl0ggZBd32AXYMbdKBTPctxDpriI8Qs-XsDqIcsO07pG_x83YISOrPinJQ&trk=d_flagship3_postapply_next_best_action&refId=Wi8eZ99uWuOxYl%2BqQ5OIjA%3D%3D&trackingId=K3Gj07LHcj6pIBlgObN1ZA%3D%3D',notes:''},
+  {id:'app3',company:'ING',position:'Intern in Finance Business Advice (Business Banking) REQ-10112018',location:'Brussels, belgium',dateApplied:'2026-06-08',status:'Applied',isEsg:false,jdUrl:'https://careers.ing.com/en/job/-/-/2618/36486217344',notes:'REQ-10112018'},
+  {id:'app4',company:'Revavia',position:'Finance & Ops Internship',location:'paris, france',dateApplied:'2026-06-08',status:'Applied',isEsg:false,jdUrl:'https://jobs.smartrecruiters.com/Revaia/744000056338045-finance-ops-internship-starting-asap-6-months',notes:''},
+  {id:'app5',company:'Lacoste',position:'Stage - Supplier Performance Analyst',location:'paris, France',dateApplied:'2026-06-08',status:'Applied',isEsg:false,jdUrl:'https://careers.lacoste.com/fr/annonce/4435431-stage-supplier-performance-analyst-75016-paris',notes:''},
+  {id:'app6',company:'Allianz Partners',position:'Intern - Finance Analyst for Home and Digital Services F/M',location:'St.-Ouen, Île-de-France, France',dateApplied:'2026-06-05',status:'Applied',isEsg:false,jdUrl:'https://careers.allianz.com/global/en/job/100062/Intern---Finance-Analyst-for-Home-and-Digital-Services-F-M?utm_campaign=azgroup&utm_source=social&utm_medium=linkedinlimitedlistings',notes:''},
+  {id:'app7',company:'ManoMano',position:'FP&A Operations & Technology Assistant - Internship',location:'Paris, France',dateApplied:'2026-06-05',status:'Applied',isEsg:false,jdUrl:'https://careers.manomano.jobs/en-GB/jobs/7860855-fp-a-operations-technology-assistant-internship?utm_source=LinkedIn',notes:''},
+  {id:'app8',company:'Joko, Station F',position:'Finance Intern',location:'paris France',dateApplied:'2026-06-05',status:'Rejected',isEsg:false,jdUrl:'https://jobs.stationf.co/companies/joko-1/jobs/finance-analyst-intern_paris_JOKO_e2wdpA0',notes:''},
+  {id:'app9',company:'Swiss Finance',position:'Investment Banking Intern',location:'EMEA Remote',dateApplied:'2026-06-05',status:'Applied',isEsg:false,jdUrl:'https://www.linkedin.com/jobs/search/?currentJobId=4391630547&f_E=1&f_TPR=r86400&geoId=105015875&keywords=Finance%20Intern&origin=JOB_SEARCH_PAGE_SEARCH_BUTTON&refresh=true&spellCorrectionEnabled=true',notes:''},
+  {id:'app10',company:'Danone',position:'Finance Intern (Marketing and Sales Controlling)',location:'NL',dateApplied:'2026-06-05',status:'Rejected',isEsg:false,jdUrl:'https://careers.danone.com/benelux/en/jobs/finance-intern-marketing-and-sales-controlling-25882-en-us.html?utm_source=linkedin&utm_medium=jobposting',notes:''},
+  {id:'app11',company:'Infranity',position:'Sustainable Finance internship',location:'Paris, France',dateApplied:'2026-06-05',status:'Applied',isEsg:false,jdUrl:'',notes:'Mailed her resuem from EDHEC mailiD'},
+  {id:'app12',company:'Vantiva',position:'Finance Intern (FnC)',location:'Paris France',dateApplied:'2026-06-05',status:'Applied',isEsg:false,jdUrl:'https://vantiva.wd103.myworkdayjobs.com/vantiva/job/Paris/Finance-Intern---Apprentice_JR100445?source=LinkedIn',notes:''},
+  {id:'app13',company:'SCOR',position:'Retrocession Analyst Intern',location:'Paris, France',dateApplied:'2026-06-05',status:'Applied',isEsg:false,jdUrl:'aplitrak.com/?adid=aHIuMzU5MzIuMTU1MEBzY29yLmFwbGl0cmFrLmNvbQ',notes:''},
+  {id:'app14',company:'Betclic Group',position:'FPnA',location:'Bordeaux, France',dateApplied:'2026-06-05',status:'Applied',isEsg:false,jdUrl:'https://betclic-group.breezy.hr/p/16f1af55af1101-internship-financial-controller-assistant-controleur-de-gestion-junior-f-m?src=Linkedin',notes:''},
+  {id:'app15',company:'GE Healthcare',position:'International Product Finance Analyst H/F',location:'Buc, France',dateApplied:'2026-06-05',status:'Applied',isEsg:false,jdUrl:'https://careers.gehealthcare.com/global/en/job/GEVGHLGLOBALR4041067EXTERNALENGLOBAL/Internship-International-Product-Finance-Analyst-H-F?utm_source=linkedin&utm_medium=phenom-feeds',notes:''},
+  {id:'app16',company:'Allianz',position:'AUDIT ANALYTICS INTERN W/M',location:'Paris',dateApplied:'2026-06-05',status:'Applied',isEsg:false,jdUrl:'https://www.linkedin.com/jobs/collections/recommended/?currentJobId=4401334958',notes:''},
+  {id:'app17',company:'AEGEE',position:'Finance Trainee',location:'Belgium',dateApplied:'2026-06-04',status:'Applied',isEsg:false,jdUrl:'https://www.linkedin.com/jobs/search/?currentJobId=4423325625&f_E=1&f_TPR=r86400&geoId=100565514&keywords=Finance&origin=JOB_SEARCH_PAGE_SEARCH_BUTTON&refresh=true',notes:''},
+  {id:'app18',company:'PAI Partners',position:'Valuation Intern',location:'Paris, France',dateApplied:'2026-06-04',status:'Applied',isEsg:false,jdUrl:'https://careers.paipartners.com/o/valuation-intern-paris-6-months-starting-june-2026',notes:''},
+  {id:'app19',company:'LaSalle Investment Management',position:'Intern, Transactions',location:'Paris, France',dateApplied:'2026-06-03',status:'Applied',isEsg:false,jdUrl:'https://www.linkedin.com/jobs/search-results/?currentJobId=4422963609&eBP=CwEAAAGeju6W_9B1YfP_O587L5rN-BBeRkhCOBUsz1kXcq_CbUGr1ARon5gq9UasYOT_989bT4ocGjQTxi9n4lmh4lO6-xASNmXqf0Ig9SX7PudmdPFAGec9_fr85qq9EVCRuhSl3E9X5Bqor72EXRJ_haOrR5pRo5kAOX08Tbd0EY16zRmJeClEKHjBOd_aBs3j6MP6QlHZCIJK0P_a5OM-GAbwtNM0IEOEI4EO37Rma8p39Su0obOgkdqmzXEThntPmN-_G_GKWnksZM4rejlT2qmpsBm52NQg___BNEZgkOjvCAsee7-XtbpPJdqNo5c5Xzc9_tDGV55ffI1cKvrE84ox5eyp7akdSfaBZ3nKCItVRXh16ww4Ylc5TuXEFVrOyd7XwbbSA_pzsroq47QHKzqVGCR6ILrfBw3pyegOKzxHBK925vFUfD_Zg6z534PW1CQ1vxriAWo785dyM1ZCEmwqFWU&refId=BSNynaAcjmgPV5kNIgcRXQ%3D%3D&trackingId=AKbNSnMYaiedYIbPBmzlZg%3D%3D&keywords=Finance%20Intern&origin=JOB_SEARCH_PAGE_LOCATION_AUTOCOMPLETE&geoId=105015875&f_TPR=r86400',notes:'job requisition id REQ495616'},
+  {id:'app20',company:'Standard Chartered',position:'Intern, Project & Export Finance',location:'Paris France',dateApplied:'2026-06-03',status:'Applied',isEsg:false,jdUrl:'https://www.linkedin.com/jobs/search-results/?currentJobId=4424094467&eBP=NOT_ELIGIBLE_FOR_CHARGING&refId=X5xgYpTd35dMH4mte4aqig%3D%3D&trackingId=UikR4MPffKvzrcn%2FO5q7Ag%3D%3D&keywords=Finance%20Intern&origin=JOB_SEARCH_PAGE_LOCATION_AUTOCOMPLETE&geoId=105015875&f_TPR=r86400',notes:'Requisition Number:  55400'},
+  {id:'app21',company:'Quandela',position:'CFO right hand Intern (H2/2026)',location:'Massy, france',dateApplied:'2026-06-03',status:'Applied',isEsg:false,jdUrl:'https://www.linkedin.com/jobs/search-results/?currentJobId=4424089515&eBP=NOT_ELIGIBLE_FOR_CHARGING&refId=%2F79b5aap4QEwXMqJnXH82Q%3D%3D&trackingId=%2Fii8DMxGNtNjH56R8fY8Ow%3D%3D&keywords=Finance%20Intern&origin=JOB_SEARCH_PAGE_LOCATION_AUTOCOMPLETE&geoId=105015875&f_TPR=r86400',notes:''},
+  {id:'app22',company:'Pepsico',position:'Integrated Business Planning Intern Job LocationsBE-ZaventemRequisition Post Information* : Posted Date',location:'Zaventem, Belgium',dateApplied:'2026-06-03',status:'Applied',isEsg:false,jdUrl:'https://www.linkedin.com/jobs/view/4410179947/?alternateChannel=search&eBP=CwEAAAGejtQSNLiFXCS-3DqKNUO6mceYOkbWHsb0uGYxBXUk8EojjgOH2X38W-mpwMqnWvmDPbb4-7GTkRrsXf76lSXmdEFc-ayD8XrWWATk2-ejLAoeEqx6Q9B7SWQnBh7Wf-V3MoR8YAumlZ8-h1irsbb2MuPcjBRQXn5vjO3qMh5eilu_OqJPIA3rz8EJCFk8wCk9hCTVgJh5oaS_HQ97UNEDwYKn4qjqQHyBqJIjo1VS1Ztl_6FBUn94Foxdj93WAPJWM6In4TzU8Go-h54HzHjnkIwnXLrrOR2ZBGCCzJO80XdM9ObPRHbLpbCrBy5Lt2AnfVJQ3-IFUtTpzuej-yAcM339T4weR2IyiOUNBMgjxRLe-rjNzMXwDfHvnZ_JqutVZARehc4h0RNvzIpfSp6B3IsHjjSSXhHhexNA2BTNtqM-6zQLx8D2PPPqoauXtf391l5_7vaGvpxjwBjTaBC5hy8JT2QDLwQymO9zWtR4vgY&refId=%2BBR8xRE3RE5p8eGTPQQMmw%3D%3D&trackingId=MzpITgz7QnDtkOBqES5Cag%3D%3D',notes:'Req ID 2026-453767'},
+  {id:'app23',company:'Henkel',position:'Category Management - Henkel Consumer Brands (M/F/X)',location:'IDK',dateApplied:'2026-06-03',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app24',company:'SCOR',position:'Investor Relations Intern',location:'Paris',dateApplied:'2026-06-03',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app25',company:'PICTET',position:'Internship - Mobile Team (124364)',location:'LU',dateApplied:'2026-06-03',status:'Applied',isEsg:false,jdUrl:'https://edhec.jobteaser.com/en/job-offers/f65d4803-ca4d-40fa-a119-84e194984177-bank-pictet-cie-europe-ag-succursale-de-luxembourg-internship-mobile-team',notes:''},
+  {id:'app26',company:'ING',position:'Intern Metals, Mining & Fertilizers – Wholesale Banking',location:'Frankfurt Germany',dateApplied:'2026-06-02',status:'Applied',isEsg:false,jdUrl:'https://careers.ing.com/en/job/frankfurt-am-main/intern-metals-mining-and-fertilizers-wholesale-banking-f-m-x/3121/32592656512',notes:'REQ-10091879'},
+  {id:'app27',company:'PUIG',position:'Finance Analysis Graduate',location:'Barcelona',dateApplied:'2026-06-02',status:'Applied',isEsg:false,jdUrl:'https://careers.puig.com/opportunity/30377',notes:''},
+  {id:'app28',company:'Generali Italia',position:'Junior ALM Analyst - Internship',location:'Trieste (Italy)',dateApplied:'2026-06-02',status:'Applied',isEsg:false,jdUrl:'https://edhec.jobteaser.com/en/job-offers/3cae07ac-5dc9-4abd-be1b-ba1b51142750-generali-italia-junior-alm-analyst-internship',notes:''},
+  {id:'app29',company:'CEVA',position:'Operations Coordinator',location:'Singapore',dateApplied:'2026-06-02',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app30',company:'SG',position:'Chargé de Financements de Projets - Secteur Energie - EMEA 260001NX',location:'Paris',dateApplied:'2026-06-02',status:'Rejected',isEsg:false,jdUrl:'https://edhec.jobteaser.com/en/job-offers/571b9381-dfc3-495c-907f-a17fdd1be7a7-societe-generale-charge-de-financements-de-projets-secteur-energie-zone-europe-moyen-orient-afrique',notes:''},
+  {id:'app31',company:'SAINT LAURENT',position:'Contrôle de Gestion EMEA R163464',location:'Paris (France)',dateApplied:'2026-06-02',status:'Applied',isEsg:false,jdUrl:'https://edhec.jobteaser.com/en/job-offers/662283e8-1f8b-4ac6-ab72-108e1d96387b-saint-laurent-saint-laurent-stage-controle-de-gestion-emea-h-f',notes:''},
+  {id:'app32',company:'Airbus',position:'Internship JR10394816',location:'Spain',dateApplied:'2026-06-02',status:'Applied',isEsg:false,jdUrl:'https://ag.wd3.myworkdayjobs.com/en-US/Airbus/userHome',notes:''},
+  {id:'app33',company:'AirBus',position:'Supply Chain Quality Internship JR10409402',location:'Spain',dateApplied:'2026-06-02',status:'Applied',isEsg:false,jdUrl:'https://edhec.jobteaser.com/en/job-offers/d1b24e55-5d8d-497d-bcd9-26ad6dd2d8a7-airbus-discover-ii-2026-2027-supply-chain-quality-internship',notes:''},
+  {id:'app34',company:'Forvia Faurecia',position:'Finance Intern',location:'US',dateApplied:'2026-06-02',status:'Applied',isEsg:false,jdUrl:'https://edhec.jobteaser.com/en/job-offers/393b5304-79dc-4b40-8a3a-1b37e6472b48-forvia-faurecia-year-round-finance-intern',notes:''},
+  {id:'app35',company:'RiverBank',position:'Finance Intern',location:'LU',dateApplied:'2026-06-02',status:'Applied',isEsg:false,jdUrl:'https://jobs.world.luccasoftware.com/riverbank/finance-intern-13d17a75-7370-4004-9acc-07bf430620ac',notes:''},
+  {id:'app36',company:'pernod Richard',position:'Stage Cash Performance - H/F',location:'France',dateApplied:'2026-06-02',status:'Applied',isEsg:false,jdUrl:'https://pernodricard.wd3.myworkdayjobs.com/en-US/pernod-ricard/userHome',notes:''},
+  {id:'app37',company:'Tikehau Capital',position:'Private Equity Real Estate (H/F) – July 2026',location:'Paris France',dateApplied:'2026-06-02',status:'Applied',isEsg:false,jdUrl:'https://edhec.jobteaser.com/en/job-offers/9e8ab28f-3a1e-4bc5-be1d-39f1f2b23a00-tikehau-capital-internship-private-equity-real-estate-h-f-july-2026',notes:''},
+  {id:'app38',company:'Avery Dennison',position:'Fin COntrolling',location:'Netherlands',dateApplied:'2026-06-02',status:'Applied',isEsg:false,jdUrl:'https://edhec.jobteaser.com/en/job-offers/b88702fe-83d2-4a13-9067-570835757f31-avery-dennison-internship-financial-controlling',notes:'Job teaser'},
+  {id:'app39',company:'Credit Agricole CIB',position:'Corporate and Leveraged Finance Intern',location:'Italy',dateApplied:'2026-05-29',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app40',company:'UBS',position:'2026 Off-Cycle Internship - Global Banking',location:'Milan, Italy',dateApplied:'2026-05-29',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app41',company:'FORVIA HELLA',position:'Summer Practice for Finance Department',location:'Romania',dateApplied:'2026-05-29',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app42',company:'Baxter',position:'Global Business Solutions Summer Internship',location:'Poland',dateApplied:'2026-05-29',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app43',company:'SCOR',position:'P&C Financial Analyst Intern',location:'France',dateApplied:'2026-05-29',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app44',company:'Nomura Greentech',position:'Investment Banking Off-Cycle Internship',location:'Zurich',dateApplied:'2026-05-29',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app45',company:'Philip Morris',position:'Finance Intern',location:'Netherlands',dateApplied:'2026-05-28',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app46',company:'Amplifon',position:'Finance & Controlling',location:'Dilbeek, Belgium',dateApplied:'2026-05-28',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app47',company:'Tesla',position:'Finance Data Analyst Internship',location:'Netherlands',dateApplied:'2026-05-28',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app48',company:'FairPhone',position:'Finance Intern',location:'Amsterdam',dateApplied:'2026-05-28',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app49',company:'Coty',position:'Finance Intern',location:'Paris, France',dateApplied:'2026-05-27',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app50',company:'BlaBlaCar',position:'Financial Planning & Analysis Intern',location:'Paris, France',dateApplied:'2026-05-27',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app51',company:'JDE Peets',position:'Intern Global FP&A',location:'Amsterdam, Netherlands',dateApplied:'2026-05-27',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app52',company:'BMW Group',position:'Finance Intern',location:'Athens, Greece',dateApplied:'2026-05-27',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app53',company:'C Teleport',position:'Finance Analyst Intern',location:'Netherlands',dateApplied:'2026-05-27',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app54',company:'Teton',position:'Finance - Summer Intern (paid)',location:'Copenhagen, Denmark',dateApplied:'2026-05-27',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app55',company:'ABB E-Mobility',position:'Finance (Controlling)',location:'Italy',dateApplied:'2026-05-27',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app56',company:'AstraZeneca',position:'Finance Intern in FP&A - 12 months',location:'Poland',dateApplied:'2026-05-22',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app57',company:'Arrow',position:'Finance Intern',location:'Gdansk, Poland',dateApplied:'2026-05-22',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app58',company:'Four Seasons Hotel',position:'Finance Intern',location:'Milan, Italy',dateApplied:'2026-05-22',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app59',company:'GE Vernova',position:'Financial Management Program intern',location:'Budapest',dateApplied:'2026-05-22',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app60',company:'GE Vernova',position:'PCS FP&A Intern',location:'France',dateApplied:'2026-05-22',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app61',company:'GE',position:'International Product Finance Analyst',location:'France',dateApplied:'2026-05-21',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app62',company:'Abbott',position:'Internship Corporate Finance Services',location:'Netherlands',dateApplied:'2026-05-21',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app63',company:'Reckitt',position:'Intern FP&A and CFF BNL',location:'Brussels',dateApplied:'2026-05-21',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app64',company:'BDO',position:'Internship Deals & Data Analytics Advisor',location:'Brussels',dateApplied:'2026-05-21',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app65',company:'Levi Strauss',position:'Planning Operations Intern',location:'Brussels',dateApplied:'2026-05-21',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app66',company:'ING Bank',position:'Internship AI @ Finance',location:'Brussels',dateApplied:'2026-05-21',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app67',company:'ING Bank',position:'Intern Wholesale Banking Sector Healthcare',location:'Brussels',dateApplied:'2026-05-21',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app68',company:'Broadridge',position:'Finance and Tax Intern',location:'Paris',dateApplied:'2026-05-19',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app69',company:'Unilever',position:'Internship Finance - Financial Analysis and Reporting',location:'Amsterdam',dateApplied:'2026-05-19',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app70',company:'ECOLAB',position:'Intern - Commercial Finance Associate',location:'Poland',dateApplied:'2026-05-19',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app71',company:'Danaher',position:'Finance Apprentice',location:'Poland',dateApplied:'2026-05-19',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app72',company:'Hyatt',position:'Audit Intern',location:'Paris',dateApplied:'2026-05-18',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app73',company:'ABB',position:'Finance',location:'Zurich',dateApplied:'2026-05-18',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app74',company:'Criteo',position:'Finance Controller Intern',location:'Spain',dateApplied:'2026-05-18',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app75',company:'EuroClear',position:'Internship - Finance & Banking',location:'Poland',dateApplied:'2026-05-18',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app76',company:'ECOLAB',position:'Intern Strategic Finance - Institutional',location:'Poland',dateApplied:'2026-05-18',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app77',company:'Rothschild',position:'Debt Advisory & Restructuring',location:'Dubai, UAE',dateApplied:'2026-05-16',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app78',company:'US Bank',position:'Global Fund Services Summer Intern',location:'Luxembourg',dateApplied:'2026-05-16',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app79',company:'Wellington Management',position:'Sustainability Finance',location:'Luxembourg',dateApplied:'2026-05-16',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app80',company:'UBS',position:'Internship in Financial Accounting (6 months)',location:'Luxembourg',dateApplied:'2026-05-16',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app81',company:'DOW',position:'Finance Internship (Accounting, Tax, Treasury)',location:'Netherlands',dateApplied:'2026-05-15',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app82',company:'Houlihan Lokey',position:'Financial Restructuring - Q4 2026',location:'Germany',dateApplied:'2026-05-15',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app83',company:'Danone',position:'Finance Intern',location:'Netherlands',dateApplied:'2026-05-15',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app84',company:'AXA',position:'Financial Controller Intern - October 2026',location:'Paris, France',dateApplied:'2026-05-15',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app85',company:'nVent',position:'Finance Intern',location:'Romania',dateApplied:'2026-05-15',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app86',company:'BMW',position:'Internal Controlling',location:'Austria',dateApplied:'2026-05-15',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app87',company:'Euronext',position:'Intern Shareholders analysis',location:'Paris',dateApplied:'2026-05-15',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app88',company:'SYNLAB',position:'Finance Leadership Program - Controlling Internship',location:'Italy',dateApplied:'2026-05-15',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app89',company:'Kraft Heinz',position:'Financial Analyst',location:'Netherlands',dateApplied:'2026-05-12',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app90',company:'PPHE',position:'Finance Intern',location:'Netherlands',dateApplied:'2026-05-12',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app91',company:'Signify',position:'FP&A',location:'Poland',dateApplied:'2026-05-12',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app92',company:'Takedu',position:'Financial Controlling - Septembre 2026',location:'Paris',dateApplied:'2026-05-11',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app93',company:'Sanofi',position:'Stage 6 mois - Audit interne',location:'Gentilly, France',dateApplied:'2026-05-11',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app94',company:'Deutsche Bank',position:'Intern A&E Lending',location:'Luxembourg',dateApplied:'2026-05-11',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app95',company:'BAT',position:'Demand Planning intern',location:'Spain',dateApplied:'2026-05-11',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app96',company:'NTT Data',position:'Internship - Finance/Accounting',location:'Luxembourg',dateApplied:'2026-05-11',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app97',company:'GE Healthcare',position:'Aquila Service Finance Intern',location:'Budapest',dateApplied:'2026-05-09',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app98',company:'Johnson & Johnson',position:'International Recruitment and Development Program - Internship',location:'Germany / Italy',dateApplied:'2026-05-09',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app99',company:'Danone',position:'Finance Digital',location:'Paris',dateApplied:'2026-05-09',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app100',company:'dsm-firmenich',position:'Controlling Trainee (2 months)',location:'Paris',dateApplied:'2026-05-09',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app101',company:'Fresenius Medical Care',position:'FP&A Intern',location:'Poland',dateApplied:'2026-05-09',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app102',company:'ACCOR',position:'Revenue Management',location:'Poland',dateApplied:'2026-05-07',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app103',company:'GE VERNOVA',position:'Finance Intern',location:'France',dateApplied:'2026-05-07',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app104',company:'OCP',position:'Investment intern',location:'N/A',dateApplied:'2026-05-07',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app105',company:'TVH',position:'FP&A intern',location:'Waregem, Belgium',dateApplied:'2026-05-07',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app106',company:'Ferrero',position:'Finance intern',location:'Luxembourg',dateApplied:'2026-05-07',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app107',company:'AXA',position:'Internship | Risk Analyst',location:'Paris',dateApplied:'2026-04-24',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app108',company:'HONOR',position:'Finance Intern',location:'Italy',dateApplied:'2026-04-24',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app109',company:'Leggett & Platt',position:'FP&A Intern',location:'Germany',dateApplied:'2026-04-24',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app110',company:'SCOR',position:'Group Finance Solvency II Financial Analyst Intern',location:'Paris',dateApplied:'2026-04-24',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app111',company:'Haier',position:'Finance Controller',location:'Italy',dateApplied:'2026-04-24',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app112',company:'IDEXX',position:'FP&A',location:'Netherlands',dateApplied:'2026-04-24',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app113',company:'Danone',position:'Finance Digital & AI - October 2026',location:'Paris',dateApplied:'2026-04-24',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app114',company:'Philip Morris International',position:'Finance Intern',location:'Netherlands',dateApplied:'2026-04-24',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app115',company:'Cisco',position:'Financial Analyst - LIFT Intern',location:'Poland',dateApplied:'2026-04-23',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app116',company:'Nabla',position:'Internship - Finance Analyst',location:'Paris',dateApplied:'2026-04-23',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app117',company:'Vodafone',position:'FP&A',location:'Luxembourg',dateApplied:'2026-04-08',status:'Applied',isEsg:false,jdUrl:'',notes:'12 months'},
+  {id:'app118',company:'ENGIE',position:'Intern - Internal Controller',location:'Paris',dateApplied:'2026-04-02',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app119',company:'Engie',position:'Finance Intern',location:'Spain',dateApplied:'2026-04-02',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app120',company:'Worldline',position:'Stage - Finance transformation',location:'Paris',dateApplied:'2026-04-02',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app121',company:'Danone',position:'INTERNSHIP - Internal Audit',location:'Paris',dateApplied:'2026-04-01',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app122',company:'AXA',position:'Group Investment Monitoring Analyst Junior',location:'Paris',dateApplied:'2026-03-24',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app123',company:'CERN',position:'Finance Intern',location:'Geneva',dateApplied:'2026-03-22',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app124',company:'Lesaffre',position:'Strategy and M&A Analyst',location:'Lille',dateApplied:'2026-03-22',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app125',company:'Danone',position:'Danone Future Specialist Program in Finance',location:'Poland',dateApplied:'2026-03-20',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app126',company:'Danone',position:'Finance Transformation Team Intern',location:'France',dateApplied:'2026-03-20',status:'Rejected',isEsg:false,jdUrl:'',notes:'Sarah Pattel - connect on LinkedIn'},
+  {id:'app127',company:'Pernod Ricard',position:'Financial Analyst Intern - Havana Club',location:'Paris',dateApplied:'2026-03-20',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app128',company:'Pernod Ricard',position:'Internship Business Planning & Analysis',location:'Paris',dateApplied:'2026-03-20',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app129',company:'HOMA',position:'FP&A intern',location:'Paris',dateApplied:'2026-03-20',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app130',company:'Natixis',position:'Strategic Equity Capital Markets',location:'Paris',dateApplied:'2026-03-20',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app131',company:'FTI Consulting',position:'Internship | Economic & Financial Consulting',location:'Paris',dateApplied:'2026-03-19',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app132',company:'BNP',position:'Global Markets, Chief Operating Office',location:'Singapore',dateApplied:'2026-03-19',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app133',company:'Schneider',position:'Finance Intern',location:'Mexico',dateApplied:'2026-03-19',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app134',company:'Michelin',position:'Cost Analyst Trainee',location:'Romania',dateApplied:'2026-03-19',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app135',company:'Ardian',position:'Expansion Intern',location:'Frankfurt',dateApplied:'2026-03-17',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app136',company:'EY',position:'Consultant Stagiaire en Évaluation Financière',location:'Paris',dateApplied:'2026-03-15',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app137',company:'EY',position:'Part-time Analyst - Corporate Finance',location:'Denmark',dateApplied:'2026-03-15',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app138',company:'Danone',position:'Ventures Investment - July 2026',location:'Paris',dateApplied:'2026-03-15',status:'Rejected',isEsg:true,jdUrl:'',notes:''},
+  {id:'app139',company:'Pernod Richard',position:'Convivialité Ventures Analyst Intern',location:'Paris',dateApplied:'2026-03-15',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app140',company:'EURAZEO',position:'VALUE CREATION ANALYST',location:'Paris',dateApplied:'2026-03-15',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app141',company:'DIOR',position:'Assistant Finance Project Manager - Internship',location:'Paris',dateApplied:'2026-03-14',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app142',company:'Lincoln International',position:'Graduate Intern, Portfolio Valuations',location:'London',dateApplied:'2026-03-14',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app143',company:'BNP',position:'ESG Analyst intern',location:'Paris',dateApplied:'2026-03-13',status:'Rejected',isEsg:true,jdUrl:'',notes:''},
+  {id:'app144',company:'EIGHT ADVISORY',position:'Project Finance & Infrastructure - Intern Autumn 2026',location:'Hamburg, Germany',dateApplied:'2026-03-13',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app145',company:'Eight Advisory',position:'Transaction Services - Intern',location:'Frankfurt / Munich',dateApplied:'2026-03-13',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app146',company:'P&G',position:'Strategic Finance Internship',location:'France',dateApplied:'2026-03-13',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app147',company:'JPMC',position:'Markets intern',location:'Paris',dateApplied:'2026-03-12',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app148',company:'NATIXIS',position:'Analyste Sustainable Finance',location:'France',dateApplied:'2026-03-11',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app149',company:'LAUXERA CAPITAL PARTNERS',position:'Investment Analyst',location:'Paris',dateApplied:'2026-03-03',status:'Applied',isEsg:false,jdUrl:'',notes:'Jobteaser application'},
+  {id:'app150',company:'BNP',position:'Capital Market P&L Reconciliation - Trainee',location:'Lisbon, Portugal',dateApplied:'2026-03-02',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app151',company:'EY-Parthenon',position:'Corporate Finance Intern',location:'Zurich',dateApplied:'2026-03-02',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app152',company:'HVB (Unicredit)',position:'Intern ESG Advisory',location:'Munich',dateApplied:'2026-03-01',status:'Rejected',isEsg:true,jdUrl:'',notes:''},
+  {id:'app153',company:'Edenred',position:'M&A Internship',location:'France',dateApplied:'2026-03-01',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app154',company:'Wall Street Oasis',position:'IB Intern (unpaid)',location:'Switzerland',dateApplied:'2026-03-01',status:'Applied',isEsg:false,jdUrl:'',notes:'LinkedIn'},
+  {id:'app155',company:'Houlihan Lokey',position:'CF Intern',location:'Zurich',dateApplied:'2026-03-01',status:'Applied',isEsg:false,jdUrl:'',notes:'Google contact'},
+  {id:'app156',company:'Chanel',position:'Business and Financial Analyst Intern',location:'Switzerland',dateApplied:'2026-02-27',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app157',company:'ODDO BHF',position:'Internship Corporate Finance - Vienna',location:'Vienna, Austria',dateApplied:'2026-02-27',status:'Applied',isEsg:false,jdUrl:'',notes:''},
+  {id:'app158',company:'Air Liquide',position:'Venture Capital & Operations Controller Intern',location:'Paris, France',dateApplied:'2026-02-27',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+  {id:'app159',company:'EY',position:'Audit',location:'Paris',dateApplied:'2026-01-28',status:'Rejected',isEsg:false,jdUrl:'',notes:''},
+];
+
+// ════════════════════════════════════════════
+//  GOOGLE SHEETS API
+// ════════════════════════════════════════════
+const API_URL_KEY   = 'jt2_gsheet_url';
+const CACHE_APPS    = 'jt2_cache_apps';
+const CACHE_OUT     = 'jt2_cache_out';
+const CACHE_TMPL    = 'jt2_cache_tmpl';
+
+const APP_HEADERS  = ['id','company','position','location','dateApplied','deadline','status','isEsg','jdUrl','notes','lastUpdated'];
+const OUT_HEADERS  = ['id','company','contactName','contactRole','platform','dateContacted','followupDate','reply','profileLink','notes','lastUpdated'];
+const TMPL_HEADERS = ['id','name','cat','body','rate','updatedAt'];
+
+let API_URL = (localStorage.getItem(API_URL_KEY) || '').trim();
+
+// JSONP helper — injects a <script> tag to bypass CORS entirely.
+// Google Apps Script redirects cause fetch() to fail in browsers;
+// JSONP is the reliable alternative for GET requests.
+function jsonpRequest(url, timeoutMs = 7000) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'jtCb_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const script = document.createElement('script');
+    const timer  = setTimeout(() => {
+      cleanup();
+      reject(new Error('Request timed out after ' + (timeoutMs/1000) + 's'));
+    }, timeoutMs);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = (data) => {
+      cleanup();
+      if (data && data.error) reject(new Error(data.error));
+      else resolve(data);
+    };
+
+    script.onerror = () => { cleanup(); reject(new Error('Script load failed — check the URL')); };
+    script.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cbName;
+    document.head.appendChild(script);
+  });
+}
+
+async function apiRead() {
+  return jsonpRequest(API_URL + '?action=readAll');
+}
+
+async function apiPing(url) {
+  return jsonpRequest(url + '?action=ping');
+}
+
+// Writes use fetch with mode:'no-cors'. The browser sends the request and
+// the server writes the data — we just can't read the response back.
+// Data is always cached in localStorage first so nothing is ever lost.
+async function apiSave(sheet, headers, records) {
+  if (!API_URL) return;
+  await fetch(API_URL, {
+    method: 'POST',
+    mode:   'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'save', sheet, records }),
+  });
+  // Response is opaque with no-cors — assume success (localStorage is the safety net)
+}
+
+let _saveTimer = {};
+function scheduleSave(sheet, headers, records) {
+  clearTimeout(_saveTimer[sheet]);
+  _saveTimer[sheet] = setTimeout(() => {
+    setSaveStatus('saving');
+    apiSave(sheet, headers, records)
+      .then(() => setSaveStatus('saved'))
+      .catch(err => {
+        setSaveStatus('error');
+        toast('Save failed — data kept locally. Check your connection.', 'err');
+        console.error('Save error:', err);
+      });
+  }, 800); // debounce 800ms
+}
+
+function setSaveStatus(state) {
+  const el = document.getElementById('saveStatus');
+  if (!el) return;
+  const map = {
+    idle:   { text: '',              cls: '' },
+    saving: { text: '⏳ Saving…',    cls: 'saving' },
+    saved:  { text: '✓ Saved',       cls: 'saved' },
+    error:  { text: '⚠ Save failed', cls: 'error' },
+    offline:{ text: '📴 Offline mode',cls: 'offline' }
+  };
+  const s = map[state] || map.idle;
+  el.textContent = s.text;
+  el.className   = 'save-status ' + s.cls;
+}
+
+// ════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════
+const PAGE_SIZE = 30;
+let apps = [], outreach = [], templates = [];
+let appPage = 0, outPage = 0;
+let statusChart = null, timelineChart = null;
+const STATUS_FLOW = ['Applied','OA/HireVue','Phone Screen','Superday/Final','Offer','Accepted','Rejected','Withdrawn'];
+
+// ════════════════════════════════════════════
+//  PERSISTENCE  (write-through: localStorage + Google Sheets)
+// ════════════════════════════════════════════
+function persistApps() {
+  localStorage.setItem(CACHE_APPS, JSON.stringify(apps));
+  scheduleSave('Applications', APP_HEADERS, apps.map(a => ({...a, isEsg: String(a.isEsg)})));
+}
+function persistOutreach() {
+  localStorage.setItem(CACHE_OUT, JSON.stringify(outreach));
+  scheduleSave('Outreach', OUT_HEADERS, outreach);
+}
+function persistTemplates() {
+  localStorage.setItem(CACHE_TMPL, JSON.stringify(templates));
+  scheduleSave('Templates', TMPL_HEADERS, templates);
+}
+
+// ════════════════════════════════════════════
+//  SETUP SCREEN
+// ════════════════════════════════════════════
+function showSetup() {
+  document.getElementById('setupOverlay').style.display = 'flex';
+}
+function hideSetup() {
+  document.getElementById('setupOverlay').style.display = 'none';
+}
+
+async function connectSheets() {
+  const url = document.getElementById('apiUrlInput').value.trim();
+  const btn = document.getElementById('connectBtn');
+  const msg = document.getElementById('connectMsg');
+  if (!url || !url.startsWith('https://script.google.com')) {
+    msg.textContent = '⚠ Paste the Apps Script web app URL (starts with https://script.google.com)';
+    msg.style.color = 'var(--yellow)';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Testing connection…';
+  msg.textContent = '';
+  try {
+    const ping = await apiPing(url);
+    API_URL = url;
+    localStorage.setItem(API_URL_KEY, url);
+    msg.textContent = '✓ Connected to: ' + (ping.title || 'Google Sheet');
+    msg.style.color = 'var(--green)';
+    btn.textContent = 'Loading your data…';
+    await loadFromSheets(true);
+    hideSetup();
+    boot();
+  } catch(err) {
+    msg.textContent = '✗ Could not connect: ' + err.message + '. Check the URL and make sure the web app is deployed as "Anyone".';
+    msg.style.color = 'var(--red)';
+    btn.disabled = false;
+    btn.textContent = 'Connect';
+  }
+}
+
+function useOffline() {
+  hideSetup();
+  // Load from cache / seed
+  apps      = JSON.parse(localStorage.getItem(CACHE_APPS) || 'null') || SEED.map(a => ({...a}));
+  outreach  = JSON.parse(localStorage.getItem(CACHE_OUT)  || '[]');
+  templates = JSON.parse(localStorage.getItem(CACHE_TMPL) || '[]');
+  apps.forEach(a => { a.isEsg = a.isEsg === 'true' || a.isEsg === true; });
+  setSaveStatus('offline');
+  boot();
+}
+
+// ════════════════════════════════════════════
+//  LOAD FROM GOOGLE SHEETS
+// ════════════════════════════════════════════
+async function loadFromSheets(isFirstConnect) {
+  showLoading(true);
+  try {
+    const data = await apiRead();
+
+    // Applications: prefer sheet data; fall back to seed on first connect
+    if (data.Applications && data.Applications.length > 0) {
+      apps = data.Applications.map(a => ({...a, isEsg: a.isEsg === 'true'}));
+    } else if (isFirstConnect) {
+      // First time connecting — push the 159-entry seed to the sheet
+      apps = SEED.map(a => ({...a}));
+      persistApps();
+    } else {
+      apps = JSON.parse(localStorage.getItem(CACHE_APPS) || 'null') || SEED.map(a => ({...a}));
+      apps.forEach(a => { a.isEsg = a.isEsg === 'true' || a.isEsg === true; });
+    }
+
+    outreach  = (data.Outreach  && data.Outreach.length  > 0) ? data.Outreach  : JSON.parse(localStorage.getItem(CACHE_OUT)  || '[]');
+    templates = (data.Templates && data.Templates.length > 0) ? data.Templates : JSON.parse(localStorage.getItem(CACHE_TMPL) || '[]');
+
+    // Update caches
+    localStorage.setItem(CACHE_APPS, JSON.stringify(apps));
+    localStorage.setItem(CACHE_OUT,  JSON.stringify(outreach));
+    localStorage.setItem(CACHE_TMPL, JSON.stringify(templates));
+    setSaveStatus('saved');
+  } catch(err) {
+    // Offline fallback
+    apps      = JSON.parse(localStorage.getItem(CACHE_APPS) || 'null') || SEED.map(a => ({...a}));
+    outreach  = JSON.parse(localStorage.getItem(CACHE_OUT)  || '[]');
+    templates = JSON.parse(localStorage.getItem(CACHE_TMPL) || '[]');
+    apps.forEach(a => { a.isEsg = a.isEsg === 'true' || a.isEsg === true; });
+    setSaveStatus('offline');
+    toast('Could not reach Google Sheets — using cached data', 'info');
+  }
+  showLoading(false);
+}
+
+function showLoading(on) {
+  document.getElementById('loadingOverlay').style.display = on ? 'flex' : 'none';
+}
+
+// ════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════
+function boot() {
+  refreshCompanySuggestions();
+  updateStats();
+  renderAppsTable();
+  renderCharts();
+}
+
+async function init() {
+  if (!API_URL) { showSetup(); return; }
+
+  // Safety net: if loading overlay is still visible after 10s, force boot with cache/seed
+  const safetyTimer = setTimeout(() => {
+    if (document.getElementById('loadingOverlay').style.display !== 'none') {
+      showLoading(false);
+      if (!apps || apps.length === 0) {
+        apps = JSON.parse(localStorage.getItem(CACHE_APPS) || 'null') || SEED.map(a => ({...a}));
+        apps.forEach(a => { a.isEsg = a.isEsg === 'true' || a.isEsg === true; });
+        outreach  = JSON.parse(localStorage.getItem(CACHE_OUT)  || '[]');
+        templates = JSON.parse(localStorage.getItem(CACHE_TMPL) || '[]');
+      }
+      setSaveStatus('offline');
+      toast('Connection timed out — showing cached data', 'info');
+      boot();
+    }
+  }, 10000);
+
+  try {
+    await loadFromSheets(false);
+  } catch(e) {
+    // loadFromSheets has its own catch, this is a final safety net
+  }
+  clearTimeout(safetyTimer);
+  boot();
+}
+
+
+document.addEventListener('DOMContentLoaded', () => { init(); });
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal('appModal');
+    closeModal('outModal');
+    closeModal('tmplModal');
+  }
+  if (e.ctrlKey && e.key === 'n') { e.preventDefault(); openAddModal(); }
+});
+
+</script>
+
+<!-- LOADING OVERLAY -->
+<div class="full-overlay" id="loadingOverlay" style="display:none">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <div>Loading your data from Google Sheets…</div>
+  </div>
+</div>
+
+<!-- SETUP OVERLAY -->
+<div class="full-overlay" id="setupOverlay" style="display:none">
+  <div class="setup-box">
+    <h2>🔗 Connect to Google Sheets</h2>
+    <p>Your data will live in a Google Sheet you own — synced across every browser and device, automatically backed up.</p>
+
+    <div class="setup-steps">
+      <strong>One-time setup (5 minutes):</strong><br>
+      1. Open <a href="https://sheets.google.com" target="_blank" style="color:var(--blue)">Google Sheets</a> → create a new blank spreadsheet, name it anything.<br>
+      2. Click <strong>Extensions → Apps Script</strong>.<br>
+      3. Delete all existing code, paste the contents of <code>apps_script.gs</code> (the file delivered alongside this dashboard).<br>
+      4. Click <strong>Save</strong> (floppy disk icon).<br>
+      5. Click <strong>Deploy → New deployment</strong> → type: <strong>Web app</strong>.<br>
+      6. Set <strong>Execute as: Me</strong> and <strong>Who has access: Anyone</strong> → click <strong>Deploy</strong>.<br>
+      7. Authorise when prompted, then copy the <strong>Web app URL</strong> it shows you.
+    </div>
+
+    <div class="setup-url-row">
+      <input id="apiUrlInput" type="url" placeholder="https://script.google.com/macros/s/…/exec">
+      <button class="btn btn-primary" id="connectBtn" onclick="connectSheets()">Connect</button>
+    </div>
+    <div id="connectMsg"></div>
+    <div class="setup-offline" onclick="useOffline()">Skip for now — work offline (data won't sync)</div>
+  </div>
+</div>
+
+</body>
+</html>
