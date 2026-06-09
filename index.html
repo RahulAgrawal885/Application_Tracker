@@ -1361,14 +1361,34 @@ function useOffline() {
 // ════════════════════════════════════════════
 //  LOAD FROM GOOGLE SHEETS
 // ════════════════════════════════════════════
+
+// Helper to clean messy Google Sheets date strings back to YYYY-MM-DD
+function fixDate(dStr) {
+  if (!dStr) return '';
+  if (/^\d{4}-\d{2}-\d{2}/.test(dStr)) return String(dStr).slice(0, 10); // Already clean
+  const d = new Date(dStr);
+  if (!isNaN(d)) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+  return String(dStr);
+}
+
 async function loadFromSheets(isFirstConnect) {
   showLoading(true);
   try {
     const data = await apiRead();
 
-    // Applications: prefer sheet data; fall back to seed on first connect
+    // Applications: clean the dates as they arrive from Sheets
     if (data.Applications && data.Applications.length > 0) {
-      apps = data.Applications.map(a => ({...a, isEsg: a.isEsg === 'true'}));
+      apps = data.Applications.map(a => ({
+        ...a, 
+        isEsg: a.isEsg === 'true',
+        dateApplied: fixDate(a.dateApplied),
+        deadline: fixDate(a.deadline)
+      }));
     } else if (isFirstConnect) {
       apps = SEED.map(a => ({...a}));
       persistApps();
@@ -1377,7 +1397,17 @@ async function loadFromSheets(isFirstConnect) {
       apps.forEach(a => { a.isEsg = a.isEsg === 'true' || a.isEsg === true; });
     }
 
-    outreach  = (data.Outreach  && data.Outreach.length  > 0) ? data.Outreach  : JSON.parse(localStorage.getItem(CACHE_OUT)  || '[]');
+    // Outreach: clean the dates as they arrive from Sheets
+    if (data.Outreach && data.Outreach.length > 0) {
+      outreach = data.Outreach.map(o => ({
+        ...o,
+        dateContacted: fixDate(o.dateContacted),
+        followupDate: fixDate(o.followupDate)
+      }));
+    } else {
+      outreach = JSON.parse(localStorage.getItem(CACHE_OUT)  || '[]');
+    }
+    
     templates = (data.Templates && data.Templates.length > 0) ? data.Templates : JSON.parse(localStorage.getItem(CACHE_TMPL) || '[]');
 
     localStorage.setItem(CACHE_APPS, JSON.stringify(apps));
@@ -1394,11 +1424,6 @@ async function loadFromSheets(isFirstConnect) {
   }
   showLoading(false);
 }
-
-function showLoading(on) {
-  document.getElementById('loadingOverlay').style.display = on ? 'flex' : 'none';
-}
-
 // ════════════════════════════════════════════
 //  BOOT
 // ════════════════════════════════════════════
