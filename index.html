@@ -1424,6 +1424,13 @@ async function loadFromSheets(isFirstConnect) {
   }
   showLoading(false);
 }
+
+  function showLoading(on) {
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) {
+    overlay.style.display = on ? 'flex' : 'none';
+  }
+}
 // ════════════════════════════════════════════
 //  BOOT
 // ════════════════════════════════════════════
