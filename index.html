@@ -746,10 +746,10 @@ function renderAppsTable() {
     const sk = STATUS_KEY[a.status] || 'Applied';
     const esgBadge = a.isEsg ? ' <span class="esg">ESG</span>' : '';
     const jdLink = a.jdUrl ? ` <a href="${escHtml(a.jdUrl)}" target="_blank" class="link-btn" title="View JD">🔗</a>` : '';
-    const dateStr = (a.dateApplied||'').slice(0,10);
+    const dateStr = (a.dateApplied||'').slice(0,10).split('-').reverse().join('-');
     return `<tr>
       <td><strong>${escHtml(a.company)}</strong>${esgBadge}</td>
-      <td>${escHtml(a.position)}${jdLink}</td>
+      <td>${jdLink}${escHtml(a.position)}</td>
       <td style="color:var(--txt2)">${escHtml(a.location)}</td>
       <td style="color:var(--txt2);white-space:nowrap">${dateStr}</td>
       <td><button class="badge s-${sk}" onclick="cycleStatus('${a.id}')" title="Click to cycle status">${escHtml(a.status)}</button></td>
@@ -924,18 +924,21 @@ function renderOutreachTable() {
       ? `<a href="${escHtml(o.profileLink)}" target="_blank" class="link-btn">${escHtml(o.contactName)}</a>`
       : escHtml(o.contactName);
     const rk = REPLY_BADGE[o.reply] || 'Waiting';
-    let fuDisplay = o.followupDate || '—';
-    if (o.followupDate && !['Replied – Positive','Replied – No','No Reply (gave up)'].includes(o.reply)) {
-      const fd = new Date(o.followupDate); fd.setHours(0,0,0,0);
-      if (fd < today2) fuDisplay = `<span class="overdue">${o.followupDate} !</span>`;
-      else if (fd <= new Date(today2.getTime() + 3*86400000)) fuDisplay = `<span class="followup-soon">${o.followupDate}</span>`;
-    }
+    
+const displayFollowup = o.followupDate ? o.followupDate.split('-').reverse().join('-') : '';
+let fuDisplay = displayFollowup || '—';
+if (o.followupDate && !['Replied – Positive','Replied – No','No Reply (gave up)'].includes(o.reply)) {
+  const fd = new Date(o.followupDate); fd.setHours(0,0,0,0);
+  if (fd < today2) fuDisplay = `<span class="overdue">${displayFollowup} !</span>`;
+  else if (fd <= new Date(today2.getTime() + 3*86400000)) fuDisplay = `<span class="followup-soon">${displayFollowup}</span>`;
+}
+    
     return `<tr>
       <td>${compDisplay}</td>
       <td>${nameDisplay}</td>
       <td style="color:var(--txt2)">${escHtml(o.contactRole||'')}</td>
       <td><span class="badge p-${o.platform||'Other'}">${escHtml(o.platform||'')}</span></td>
-      <td style="color:var(--txt2);white-space:nowrap">${o.dateContacted||''}</td>
+     <td style="color:var(--txt2);white-space:nowrap">${o.dateContacted ? o.dateContacted.split('-').reverse().join('-') : ''}</td>
       <td><button class="badge r-${rk}" onclick="cycleReply('${o.id}')" title="Click to change">${escHtml(o.reply||'Waiting')}</button></td>
       <td style="white-space:nowrap">${fuDisplay}</td>
       <td style="color:var(--txt2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(o.notes||'')}">${escHtml(o.notes||'')}</td>
