@@ -202,7 +202,7 @@
       <span id="saveStatus" class="save-status"></span>
       <button class="btn btn-secondary btn-sm" onclick="exportCSV()">⬇ Export</button>
       <button class="settings-btn" onclick="showSetup()" title="Google Sheets settings">⚙</button>
-      <button class="btn btn-primary btn-sm" id="addBtn" onclick="openAddModal()">＋ Add</button>
+      <button class="btn btn-primary btn-sm" id="addBtn" onclick="handleGlobalAdd()">＋ Add</button>
     </div>
   </div>
   <div class="stats-row" id="statsRow"></div>
@@ -987,7 +987,21 @@ function viewCompanyOutreach(company) {
 // ════════════════════════════════════════════
 //  OUTREACH MODAL
 // ════════════════════════════════════════════
-function openAddOutreachModal(company) {
+
+  function handleGlobalAdd() {
+  // Find which tab button currently has the 'active' class
+  const activeTab = document.querySelector('.tab.active');
+  
+  if (activeTab && activeTab.id === 'tab-outreach') {
+    openAddOutreachModal(''); // Opens outreach form with blank company
+  } else if (activeTab && activeTab.id === 'tab-templates') {
+    openTmplModal();          // Opens template form
+  } else {
+    openAddModal();           // Default fallback: opens application form
+  }
+}
+  
+  function openAddOutreachModal(company) {
   document.getElementById('outModalTitle').textContent = 'Add Outreach Contact';
   document.getElementById('outId').value = '';
   document.getElementById('ofCompany').value = company || '';
@@ -1478,7 +1492,7 @@ document.addEventListener('keydown', e => {
     closeModal('outModal');
     closeModal('tmplModal');
   }
-  if (e.ctrlKey && e.key === 'n') { e.preventDefault(); openAddModal(); }
+  if (e.ctrlKey && e.key === 'n') { e.preventDefault(); handleGlobalAdd(); }
 });
 
 </script>
